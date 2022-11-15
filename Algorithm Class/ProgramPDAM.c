@@ -11,16 +11,17 @@
 #define BPM_U 7500     // biaya pemeliharaan usaha
 #define JATUH_TEMPO 20 // jatuh tempo tgl 20
 
-struct data_pelanggan
+typedef struct data_pelanggan
 {
     char nama[20];
     int UkuranJalan,
         watt,
-        denda,
-        PemakaianAir,
+        denda;
+
+    float PemakaianAir,
         TotalHarga,
         BiayaAir;
-};
+} data_pelanggan;
 
 
 void intro(),
@@ -36,37 +37,47 @@ void intro(),
     menu_watt(int *var),
     menu_pemakaian(float *var, char *nama, int *ulang),
 
+    File_struck(float AirPtr, int menu, int jalan, int watt, float harga, int denda, float air, char *namaptr),
+    File_txt(data_pelanggan *D, int menu),
+
     rumus(float *AirPtr, int menu, int jalan, int watt, float *pakaiAir, float *hargaptr, int *dendaptr),
     denda_tempo(int *var),
     struk(float *AirPtr, int menu, int jalan, int watt, float harga, int denda, float air, char *namaptr);
 
+
 int main()
 {
+    data_pelanggan Data1;
+    
     int menu, UkuranJalan, watt, ulang, denda;
-    float Pemakaian, TotalHarga, BiayaAir;
+    //float Pemakaian, TotalHarga, BiayaAir;
     char nama[20];
 
     intro();
     pause();
     while (1)
-    {
+    {   
+        ulang = 9;
         menu_kelompok(&menu);
         if (menu == 0)
             break;
         while (1)
         {
-            menu_jalan(&UkuranJalan, menu);
-            if (UkuranJalan == 0)
+            ulang = 9;
+            menu_jalan(&Data1.UkuranJalan, menu);
+            if (Data1.UkuranJalan == 0)
                 break;
             while (1)
             {
-                menu_watt(&watt);
-                if (watt == 0)
+                ulang = 9;
+                menu_watt(&Data1.watt);
+                if (Data1.watt == 0)
                     break;
                 while (1)
                 {
+                    ulang = 9;
                     fflush(stdin);
-                    menu_pemakaian(&Pemakaian, nama, &ulang);
+                    menu_pemakaian(&Data1.PemakaianAir, Data1.nama, &ulang);
 
                     if (ulang == 4)
                         break;
@@ -74,9 +85,12 @@ int main()
                         continue;
                     while (1)
                     {
+
                         fflush(stdin);
-                        rumus(&BiayaAir, menu, UkuranJalan, watt, &Pemakaian, &TotalHarga, &denda);
-                        struk(&BiayaAir, menu, UkuranJalan, watt, TotalHarga, denda, Pemakaian, nama);
+                        rumus(&Data1.BiayaAir, menu, Data1.UkuranJalan, Data1.watt, &Data1.PemakaianAir, &Data1.TotalHarga, &Data1.denda);
+                        struk(&Data1.BiayaAir, menu, Data1.UkuranJalan, Data1.watt, Data1.TotalHarga, Data1.denda, Data1.PemakaianAir, Data1.nama);
+                        //File_struck(Data1.BiayaAir, menu, Data1.UkuranJalan, Data1.watt, Data1.TotalHarga, Data1.denda, Data1.PemakaianAir, Data1.nama);
+                        File_txt(&Data1,menu);
                         range_int(&ulang, 0, 4, "\n\n\t\t\t[0]Keluar\n\t\t\t[1]Kembali ke Menu Kelompok\n\t\t\t[2]Kembali ke Menu Lebar Jalan\n\t\t\t[3]Kembali ke Menu Besar Listrik\n\t\t\t[4]Kembali ke Form Pelanggan\n\t\t\t:");
                         break;
                     }
@@ -105,7 +119,7 @@ void range_int(int *var, int range1, int range2, char *intruksi) // membatasi in
         if (*var >= range1 && *var <= range2)
             break;
         printf("\033[0;31m");
-        printf("\t\t\t Input salah! Pilih Bulan Yang tersedia\n");
+        printf("\t\t\t Input salah! Menu Tidak Tersedia\n");
         printf("\033[0m");
     }
 }
@@ -870,6 +884,7 @@ void denda_tempo(int *var)
 void struk(float *AirPtr, int menu, int jalan, int watt, float harga, int denda, float air, char *namaptr)
 {
     int temp;
+    
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
 
@@ -914,6 +929,121 @@ void struk(float *AirPtr, int menu, int jalan, int watt, float harga, int denda,
     printf("\n");
 
     printf("\t================================================\n"); ///////;
-    printf("\t   Biaya Administrasi   : Rp. %0.2f\n", harga);
+    printf("\t   Total Harga          : Rp. %0.2f\n", harga);
     pause();
+
+}
+void File_struck(float AirPtr, int menu, int jalan, int watt, float harga, int denda, float air, char *namaptr){
+    int temp;
+    FILE *Fp;
+    Fp = fopen("Struk_pelanggan.txt","w");
+
+    
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+
+    fprintf(Fp,"\t================================================\n"); //////);
+    fprintf(Fp,"\t||                 Program PDAM               ||\n");
+    fprintf(Fp,"\t||            PT. Blangkon Sejahtera          ||\n");
+    fprintf(Fp,"\t||============================================||\n"); ///////;
+    fprintf(Fp,"\t||                                            ||\n");
+    fprintf(Fp,"\t||             STRUK PEMBAYARAN AIR           ||\n");
+    fprintf(Fp,"\t||                                            ||\n");
+    fprintf(Fp,"\t================================================\n"); ///////;
+    fprintf(Fp,"\t   Nama Pelanggan       : %s \n", namaptr);
+    fprintf(Fp,"\t   Tanggal Pembayaran   : %02d-%02d-%04d\n", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
+    fprintf(Fp,"\t   Waktu Pembayaran     : %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec);
+    fprintf(Fp,"\n");
+
+    fprintf(Fp,"\t   Golongan             : ");
+    if (menu == 1)
+        fprintf(Fp,"D%d-%d", jalan, watt);
+    else if (menu == 2)
+        fprintf(Fp,"E%d-%d", jalan, watt);
+    fprintf(Fp,"\n");
+
+    fprintf(Fp,"\t   Pemakaian Air        : %0.2f M^3\n", air);
+    fprintf(Fp,"\n");
+    fprintf(Fp,"\t   Biaya Air            : Rp. %0.2f\n", AirPtr);
+    fprintf(Fp,"\t   Denda                : Rp. %d \n", denda);
+
+    fprintf(Fp,"\t   BPM                  : Rp. ");
+    if (menu == 1)
+        temp = BPM_RT;
+    else if (menu == 2)
+        temp = BPM_U;
+    fprintf(Fp,"%d", temp);
+    fprintf(Fp,"\n");
+
+    fprintf(Fp,"\t   Biaya Administrasi   : Rp. ");
+
+    if (menu == 1)
+        temp = ADMIN_RT;
+    else if (menu == 2)
+        temp = ADMIN_U;
+    fprintf(Fp,"%d", temp);
+    fprintf(Fp,"\n");
+
+    fprintf(Fp,"\t================================================\n"); ///////;
+    fprintf(Fp,"\t   Total Harga          : Rp. %0.2f\n", harga);
+
+    fclose(Fp);
+}
+
+void File_txt(data_pelanggan *D, int menu){
+    int temp;
+    FILE *Fp;
+    Fp = fopen("Struk_pelanggan.txt","w");
+
+    
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+
+    fprintf(Fp,"\t================================================\n"); //////);
+    fprintf(Fp,"\t||                 Program PDAM               ||\n");
+    fprintf(Fp,"\t||            PT. Blangkon Sejahtera          ||\n");
+    fprintf(Fp,"\t||============================================||\n"); ///////;
+    fprintf(Fp,"\t||                                            ||\n");
+    fprintf(Fp,"\t||             STRUK PEMBAYARAN AIR           ||\n");
+    fprintf(Fp,"\t||                                            ||\n");
+    fprintf(Fp,"\t================================================\n"); ///////;
+    fprintf(Fp,"\t   Nama Pelanggan       : %s \n", D->nama);
+    fprintf(Fp,"\t   Tanggal Pembayaran   : %02d-%02d-%04d\n", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
+    fprintf(Fp,"\t   Waktu Pembayaran     : %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec);
+    fprintf(Fp,"\n");
+
+    fprintf(Fp,"\t   Golongan             : ");
+    if (menu == 1)
+        fprintf(Fp,"D%d-%d", D->UkuranJalan, D->watt);
+    else if (menu == 2)
+        fprintf(Fp,"E%d-%d", D->UkuranJalan, D->watt);
+    fprintf(Fp,"\n");
+
+    fprintf(Fp,"\t   Pemakaian Air        : %0.2f M^3\n", D->PemakaianAir);
+    fprintf(Fp,"\n");
+    fprintf(Fp,"\t   Biaya Air            : Rp. %0.2f\n", D->BiayaAir);
+    fprintf(Fp,"\t   Denda                : Rp. %d \n", D->denda);
+
+    fprintf(Fp,"\t   BPM                  : Rp. ");
+    if (menu == 1)
+        temp = BPM_RT;
+    else if (menu == 2)
+        temp = BPM_U;
+    fprintf(Fp,"%d", temp);
+    fprintf(Fp,"\n");
+
+    fprintf(Fp,"\t   Biaya Administrasi   : Rp. ");
+
+    if (menu == 1)
+        temp = ADMIN_RT;
+    else if (menu == 2)
+        temp = ADMIN_U;
+    fprintf(Fp,"%d", temp);
+    fprintf(Fp,"\n");
+
+    fprintf(Fp,"\t================================================\n"); ///////;
+    fprintf(Fp,"\t   Total Harga          : Rp. %0.2f\n", D->TotalHarga);
+
+    fclose(Fp);
+    
 }

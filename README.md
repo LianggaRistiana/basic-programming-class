@@ -16,3 +16,5 @@ asdasdasd
   asdasda
   asdasd
   asdasd
+  Algorithm class
+ 
